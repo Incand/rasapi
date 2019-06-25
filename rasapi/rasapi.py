@@ -287,14 +287,21 @@ class RasaPI:
             return resp.json()
         return resp.status_code
 
-    @property
-    def domain(self):
+    def domain(self, type_='yaml'):
         '''Returns the domain specification the currently loaded model is using.
+
+        Keyword arguments:
+        type_ -- Accept header type.
+            Can be either "yaml" or "json" (default: "yaml")
         '''
-        return self._get('/domain').json()
+        if type_ not in ('yaml', 'json'):
+            raise ValueError(
+                'type_ parameter has to be either "yaml" or "json".')
+        resp = self._get('/domain', headers={"Accept": f"application/{type_}"})
+        return resp.text if type_ == 'yaml' else resp.json()
 
 
-if __name__ == '__main__':
+def int_test():
     import sys
     from pprint import pprint
     url = sys.argv[1]
@@ -337,3 +344,13 @@ if __name__ == '__main__':
     pprint(rpi.unload_current_model())
     print('domain:')
     pprint(rpi.domain)
+
+
+if __name__ == '__main__':
+    import sys
+    from pprint import pprint
+    url = sys.argv[1]
+    token = sys.argv[2]
+    rpi = RasaPI(url, token)
+
+    pprint(rpi.domain('json'))
