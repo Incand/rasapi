@@ -216,7 +216,7 @@ class TestRasaPI:
 
     def test_domain(self, rpi):
         req_mock = get_mock_response()
-        rpi.domain
+        rpi.domain()
         req_mock.assert_called_once_with(
             method='GET', url='http://nowhere/domain'
         )
