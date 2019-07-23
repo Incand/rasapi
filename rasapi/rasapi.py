@@ -408,7 +408,12 @@ class RasaPI:
         kwargs['json'] = [e.asdict() for e in events]
         return self._post('/model/predict', **kwargs).json()
 
-    def parse_message(self, text, emulation_mode='LUIS'):
+    def parse_message(
+        self,
+        text: str,
+        message_id: Optional[str] = None,
+        emulation_mode: Optional[Union['WIT', 'LUIS', 'DIALOGFLOW']] = None
+    ) -> Dict:
         '''Predicts the intent and entities of the message posted to this
         endpoint. No messages will be stored to a conversation and no action
         will be run. This will just retrieve the NLU parse results.
@@ -417,13 +422,16 @@ class RasaPI:
         text -- Message to be parsed
 
         Keyword arguments:
+        message_id -- Optional ID for message to be parsed
         emulation_mode -- Emulation mode of the parsing (default: "LUIS")
         '''
-        return self._post(
-            '/model/parse',
-            params={'emulation_mode': emulation_mode},
-            json={'text': text}
-        ).json()
+        kwargs = {'params': {'emulation_mode': emulation_mode}} \
+            if emulation_mode is not None else {}
+        json_ = {'text': text}
+        if message_id is not None:
+            json_['message_id'] = json_
+        kwargs['json'] = json_
+        return self._post('/model/parse', **kwargs).json()
 
     def replace_current_model(
         self, model_file=None, model_server=None, remote_storage=None

@@ -208,7 +208,6 @@ class TestRasaPI:
         req_mock.assert_called_once_with(
             method='POST',
             url='http://nowhere/model/parse',
-            params={'emulation_mode': 'LUIS'},
             json={'text': 'message'}
         )
 
