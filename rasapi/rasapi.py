@@ -30,11 +30,13 @@ class RasaPI:
             else os.environ.get('RASA_TOKEN', None)
 
     def _request(self, method, path, **kwargs):
+        url = self.url + path
+        req_args = {'method': method, 'url': url}
         token = self.token
-        url = self.url + path + (f'?token={token}' if token else '')
-        params = {'method': method, 'url': url}
-        params.update(kwargs)
-        return requests.request(**params)
+        if token:
+            kwargs.setdefault('params', {'token': token})
+        req_args.update(kwargs)
+        return requests.request(**req_args)
 
     def _get(self, path, **kwargs):
         return self._request('GET', path, **kwargs)
@@ -127,8 +129,8 @@ class RasaPI:
             (default: "AFTER_RESTART")
         '''
         return self._post(
-            f'/conversations/{conversation_id}/execute'
-            f'?include_events={include_events}',
+            f'/conversations/{conversation_id}/execute',
+            params={'include_events': include_events},
             json={'name': name, 'policy': policy, 'confidence': confidence}
         ).json()
 
@@ -166,8 +168,8 @@ class RasaPI:
 
         '''
         return self._post(
-            f'/conversations/{conversation_id}/messages'
-            f'?include_events={include_events}',
+            f'/conversations/{conversation_id}/messages',
+            params={'include_events': include_events},
             json={'text': 'hello', 'sender': 'user', 'parse_data': {}}
         ).json()
 
@@ -208,7 +210,8 @@ class RasaPI:
             (default: False)
         '''
         e2e_str = 'true' if e2e else 'false'
-        return self._post(f'/model/test/stories?e2e={e2e_str}', data=stories)
+        return self._post(
+            '/model/test/stories', params={'e2e': e2e_str}, data=stories)
 
     def evaluate_intents(self, nlu_train_data, model):
         '''Evaluates intents against the currently loaded Rasa model or the
@@ -220,7 +223,8 @@ class RasaPI:
             (example: "rasa-model.tar.gz")
         '''
         return self._post(
-            f'/model/test/intents?model={model}',
+            '/model/test/intents',
+            params={'model': model},
             data=nlu_train_data
         ).json()
 
@@ -240,7 +244,8 @@ class RasaPI:
             (default: "AFTER_RESTART")
         '''
         return self._post(
-            f'/model/predict?include_events={include_events}',
+            '/model/predict',
+            params={'include_events': include_events},
             json=[{'event': e} for e in events]
         ).json()
 
@@ -256,7 +261,8 @@ class RasaPI:
         emulation_mode -- Emulation mode of the parsing (default: "LUIS")
         '''
         return self._post(
-            f'/model/parse?emulation_mode={emulation_mode}',
+            '/model/parse',
+            params={'emulation_mode': emulation_mode},
             json={'text': text}
         ).json()
 
@@ -343,7 +349,7 @@ def int_test():
     print('unload_current_model():')
     pprint(rpi.unload_current_model())
     print('domain:')
-    pprint(rpi.domain)
+    pprint(rpi.domain())
 
 
 if __name__ == '__main__':

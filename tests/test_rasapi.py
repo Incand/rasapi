@@ -120,8 +120,8 @@ class TestRasaPI:
             '12345678', 'utter_test', policy='string', confidence=1.0)
         req_mock.assert_called_once_with(
             method='POST',
-            url='http://nowhere/conversations/12345678/execute'
-                '?include_events=AFTER_RESTART',
+            url='http://nowhere/conversations/12345678/execute',
+            params={'include_events': 'AFTER_RESTART'},
             json={'name': 'utter_test', 'policy': 'string', 'confidence': 1.0}
         )
 
@@ -138,8 +138,8 @@ class TestRasaPI:
         rpi.add_message('12345678', 'hello', 'testuser', parse_data={})
         req_mock.assert_called_once_with(
             method='POST',
-            url='http://nowhere/conversations/12345678/messages'
-            '?include_events=AFTER_RESTART',
+            url='http://nowhere/conversations/12345678/messages',
+            params={'include_events': 'AFTER_RESTART'},
             json={'text': 'hello', 'sender': 'user', 'parse_data': {}}
         )
 
@@ -159,7 +159,8 @@ class TestRasaPI:
         rpi.evaluate_stories("MARKDOWN")
         req_mock.assert_called_once_with(
             method='POST',
-            url='http://nowhere/model/test/stories?e2e=false',
+            url='http://nowhere/model/test/stories',
+            params={'e2e': 'false'},
             data="MARKDOWN"
         )
 
@@ -168,7 +169,8 @@ class TestRasaPI:
         rpi.evaluate_intents("MARKDOWN", "model.tar.gz")
         req_mock.assert_called_once_with(
             method='POST',
-            url='http://nowhere/model/test/intents?model=model.tar.gz',
+            url='http://nowhere/model/test/intents',
+            params={'model': 'model.tar.gz'},
             data="MARKDOWN"
         )
 
@@ -177,7 +179,8 @@ class TestRasaPI:
         rpi.predict_action(['slot', 'action', 'whut'])
         req_mock.assert_called_once_with(
             method='POST',
-            url='http://nowhere/model/predict?include_events=AFTER_RESTART',
+            url='http://nowhere/model/predict',
+            params={'include_events': 'AFTER_RESTART'},
             json=[{'event': 'slot'}, {'event': 'action'}, {'event': 'whut'}]
         )
 
@@ -186,7 +189,8 @@ class TestRasaPI:
         rpi.parse_message('message')
         req_mock.assert_called_once_with(
             method='POST',
-            url='http://nowhere/model/parse?emulation_mode=LUIS',
+            url='http://nowhere/model/parse',
+            params={'emulation_mode': 'LUIS'},
             json={'text': 'message'}
         )
 
@@ -216,7 +220,8 @@ class TestRasaPI:
 
     def test_domain(self, rpi):
         req_mock = get_mock_response()
-        rpi.domain()
+        _ = rpi.domain()
         req_mock.assert_called_once_with(
-            method='GET', url='http://nowhere/domain'
+            method='GET', url='http://nowhere/domain',
+            headers={"Accept": "application/yaml"}
         )
