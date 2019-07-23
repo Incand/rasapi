@@ -91,16 +91,22 @@ class RasaPI:
             params={'include_events': include_events, 'until': until}
         ).json()
 
-    def append_event(self, conversation_id, event):
+    def append_event(self, conversation_id, event,
+                     include_events='AFTER_RESTART'):
         '''Append a new event to the tracker state of the conversations.
 
         Arguments:
         conversation_id -- ID of the conversation of which to get the tracker
         event -- event to append to the tracker
+
+        include_events -- Specify which events of the tracker the response
+            should contain.
+            Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
+            (default: "AFTER_RESTART")
         '''
         return self._post(
             f'/conversations/{conversation_id}/tracker/events',
-            json={'event': event}
+            json={'event': event}, params={'include_events': include_events}
         ).json()
 
     def replace_events(self, conversation_id, events):

@@ -95,7 +95,7 @@ class TestRasaPI:
         req_mock.assert_called_once_with(
             method='POST',
             url='http://nowhere/conversations/12345678/tracker/events',
-            json={'event': 'slot'}
+            json={'event': 'slot'}, params={'include_events': 'AFTER_RESTART'}
         )
 
     def test_replace_events(self, rpi):
