@@ -383,7 +383,12 @@ class RasaPI:
             kwargs['params'] = {'model': model}
         return self._post('/model/test/intents', **kwargs).json()
 
-    def predict_action(self, events, include_events='AFTER_RESTART'):
+    def predict_action(
+        self,
+        events: Iterable[Event],
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
         '''Predicts the next action on the tracker state as it is posted to
         this endpoint. Rasa will create a temporary tracker from the provided
         events and will use it to predict an action. No messages will be sent
@@ -398,11 +403,10 @@ class RasaPI:
             Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
             (default: "AFTER_RESTART")
         '''
-        return self._post(
-            '/model/predict',
-            params={'include_events': include_events},
-            json=[{'event': e} for e in events]
-        ).json()
+        kwargs = {'params': {'include_events': include_events}} \
+            if include_events is not None else {}
+        kwargs['json'] = [e.asdict() for e in events]
+        return self._post('/model/predict', **kwargs).json()
 
     def parse_message(self, text, emulation_mode='LUIS'):
         '''Predicts the intent and entities of the message posted to this

@@ -190,12 +190,16 @@ class TestRasaPI:
 
     def test_predict_action(self, rpi):
         req_mock = get_mock_response()
-        rpi.predict_action(['slot', 'action', 'whut'])
+        events = [Event('slot'), Event('wurst', 1234), Event('calzone', 4321)]
+        rpi.predict_action(events)
         req_mock.assert_called_once_with(
             method='POST',
             url='http://nowhere/model/predict',
-            params={'include_events': 'AFTER_RESTART'},
-            json=[{'event': 'slot'}, {'event': 'action'}, {'event': 'whut'}]
+            json=[
+                {'event': 'slot'},
+                {'event': 'wurst', 'timestamp': 1234},
+                {'event': 'calzone', 'timestamp': 4321}
+            ]
         )
 
     def test_parse_message(self, rpi):
