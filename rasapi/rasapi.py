@@ -463,7 +463,8 @@ class RasaPI:
         '''Unloads the currently loaded trained model from the server.'''
         return self._delete('/model').json()
 
-    def domain(self, type_='yaml'):
+    def domain(self,
+               type_: Union['yaml', 'json'] = 'yaml') -> Union[str, Dict]:
         '''Returns the domain specification the currently loaded model is using.
 
         Keyword arguments:
