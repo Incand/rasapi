@@ -259,7 +259,7 @@ class RasaPI:
             f'/conversations/{conversation_id}/execute', **kwargs
         ).json()
 
-    def score_actions(self, conversation_id):
+    def score_actions(self, conversation_id: str) -> Dict:
         '''Runs the conversations tracker through the model's policies to
         predict the scores of all actions present in the model's domain.
 

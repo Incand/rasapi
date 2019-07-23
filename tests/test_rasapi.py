@@ -146,8 +146,7 @@ class TestRasaPI:
         req_mock = get_mock_response()
         rpi.score_actions('12345678')
         req_mock.assert_called_once_with(
-            method='POST',
-            url='http://nowhere/conversations/12345678/predict'
+            method='POST', url='http://nowhere/conversations/12345678/predict'
         )
 
     def test_add_message(self, rpi):
