@@ -459,12 +459,9 @@ class RasaPI:
             json_['remote_storage'] = remote_storage
         return self._put('/model', json=json_).json()
 
-    def unload_current_model(self):
+    def unload_current_model(self) -> Dict:
         '''Unloads the currently loaded trained model from the server.'''
-        resp = self._delete('/model')
-        if not resp.ok:
-            return resp.json()
-        return resp.status_code
+        return self._delete('/model').json()
 
     def domain(self, type_='yaml'):
         '''Returns the domain specification the currently loaded model is using.
