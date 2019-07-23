@@ -17,19 +17,21 @@
 
 '''Module containing RASA API bindings.'''
 
+from typing import Union, Iterable, Optional
+
 import requests
 import os
 
 
 class RasaPI:
     '''Class for Rasa API communication.'''
-    def __init__(self, url, token=None):
+    def __init__(self, url: str, token: Optional[str] = None) -> None:
         self.url = url.strip('/')
         self.token = token \
             if token is not None \
             else os.environ.get('RASA_TOKEN', None)
 
-    def _request(self, method, path, **kwargs):
+    def _request(self, method: str, path: str, **kwargs) -> requests.request:
         url = self.url + path
         req_args = {'method': method, 'url': url}
         token = self.token
@@ -38,16 +40,16 @@ class RasaPI:
         req_args.update(kwargs)
         return requests.request(**req_args)
 
-    def _get(self, path, **kwargs):
+    def _get(self, path: str, **kwargs) -> requests.request:
         return self._request('GET', path, **kwargs)
 
-    def _post(self, path, **kwargs):
+    def _post(self, path: str, **kwargs) -> requests.request:
         return self._request('POST', path, **kwargs)
 
-    def _put(self, path, **kwargs):
+    def _put(self, path: str, **kwargs) -> requests.request:
         return self._request('PUT', path, **kwargs)
 
-    def _delete(self, path, **kwargs):
+    def _delete(self, path: str, **kwargs) -> requests.request:
         return self._request('DELETE', path, **kwargs)
 
     @property
@@ -70,8 +72,12 @@ class RasaPI:
         '''Get the status of the currently loaded model.'''
         return self._get('/status').json()
 
-    def get_tracker(self, conversation_id, include_events='AFTER_RESTART',
-                    until='None'):
+    def get_tracker(
+        self,
+        conversation_id: str,
+        include_events: Optional[str] = None,
+        until: Optional[int] = None
+    ) -> dict:
         '''Get the traker of the conversation given by the ID.
 
         Arguments:
@@ -86,9 +92,15 @@ class RasaPI:
             Events that occur exactly at the target time will be included.
             (default: "None")
         '''
+        kwargs = {}
+        params = {}
+        if include_events is not None:
+            params['include_events'] = include_events
+        if until is not None:
+            params['until'] = until
+        kwargs = {'params': params} if params else {}
         return self._get(
-            f'/conversations/{conversation_id}/tracker',
-            params={'include_events': include_events, 'until': until}
+            f'/conversations/{conversation_id}/tracker', **kwargs
         ).json()
 
     def append_event(self, conversation_id, event, timestamp=None,
