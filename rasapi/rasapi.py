@@ -225,9 +225,14 @@ class RasaPI:
             f'/conversations/{conversation_id}/story', **kwargs).text
 
     def execute_action(
-        self, conversation_id, name,
-        policy=None, confidence=None, include_events='AFTER_RESTART'
-    ):
+        self,
+        conversation_id: str,
+        name: str,
+        policy: Optional[str] = None,
+        confidence: Optional[float] = None,
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
         '''Runs the provided action.
 
         Arguments:
@@ -242,10 +247,16 @@ class RasaPI:
             Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
             (default: "AFTER_RESTART")
         '''
+        kwargs = {'params': {'include_events': include_events}} \
+            if include_events is not None else {}
+        json_ = {'name': name}
+        if policy is not None:
+            json_['policy'] = policy
+        if confidence is not None:
+            json_['confidence'] = confidence
+        kwargs['json'] = json_
         return self._post(
-            f'/conversations/{conversation_id}/execute',
-            params={'include_events': include_events},
-            json={'name': name, 'policy': policy, 'confidence': confidence}
+            f'/conversations/{conversation_id}/execute', **kwargs
         ).json()
 
     def score_actions(self, conversation_id):

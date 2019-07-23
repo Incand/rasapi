@@ -135,13 +135,11 @@ class TestRasaPI:
 
     def test_execute_action(self, rpi):
         req_mock = get_mock_response()
-        rpi.execute_action(
-            '12345678', 'utter_test', policy='string', confidence=1.0)
+        rpi.execute_action('12345678', 'utter_test')
         req_mock.assert_called_once_with(
             method='POST',
             url='http://nowhere/conversations/12345678/execute',
-            params={'include_events': 'AFTER_RESTART'},
-            json={'name': 'utter_test', 'policy': 'string', 'confidence': 1.0}
+            json={'name': 'utter_test'}
         )
 
     def test_score_actions(self, rpi):
@@ -239,7 +237,7 @@ class TestRasaPI:
 
     def test_domain(self, rpi):
         req_mock = get_mock_response()
-        _ = rpi.domain()
+        rpi.domain()
         req_mock.assert_called_once_with(
             method='GET', url='http://nowhere/domain',
             headers={"Accept": "application/yaml"}
