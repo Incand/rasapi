@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 import requests
 
-from rasapi.rasapi import RasaPI
+from rasapi.rasapi import RasaPI, Event
 
 
 class MockResponse:
@@ -95,6 +95,20 @@ class TestRasaPI:
             method='POST',
             url='http://nowhere/conversations/12345678/tracker/events',
             json={'event': 'slot'}
+        )
+
+    def test_append_events(self, rpi):
+        req_mock = get_mock_response()
+        events = [Event('slot'), Event('wurst', 1234), Event('calzone', 4321)]
+        rpi.append_events('12345678', events)
+        req_mock.assert_called_once_with(
+            method='POST',
+            url='http://nowhere/conversations/12345678/tracker/events',
+            json=[
+                {'event': 'slot'},
+                {'event': 'wurst', 'timestamp': 1234},
+                {'event': 'calzone', 'timestamp': 4321}
+            ]
         )
 
     def test_replace_events(self, rpi):

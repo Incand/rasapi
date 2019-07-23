@@ -17,10 +17,21 @@
 
 '''Module containing RASA API bindings.'''
 
-from typing import Union, Iterable, Optional
+from typing import NamedTuple, Union, Iterable, Optional, Dict
 
 import requests
 import os
+
+
+class Event(NamedTuple):
+    event: str
+    timestamp: Optional[int] = None
+
+    def asdict(self) -> Dict:
+        ret = {'event': self.event}
+        if self.timestamp is not None:
+            ret['timestamp'] = self.timestamp
+        return ret
 
 
 class RasaPI:
@@ -68,16 +79,17 @@ class RasaPI:
         return self._get('/version').json()['minimum_compatible_version']
 
     @property
-    def status(self) -> dict:
+    def status(self) -> Dict:
         '''Get the status of the currently loaded model.'''
         return self._get('/status').json()
 
     def get_tracker(
         self,
         conversation_id: str,
-        include_events: Optional[str] = None,
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None,
         until: Optional[int] = None
-    ) -> dict:
+    ) -> Dict:
         '''Get the traker of the conversation given by the ID.
 
         Arguments:
@@ -92,7 +104,6 @@ class RasaPI:
             Events that occur exactly at the target time will be included.
             (default: "None")
         '''
-        kwargs = {}
         params = {}
         if include_events is not None:
             params['include_events'] = include_events
@@ -108,8 +119,9 @@ class RasaPI:
         conversation_id: str,
         event: str,
         timestamp: Optional[int] = None,
-        include_events: Optional[str] = None
-    ) -> dict:
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
         '''Append a new event to the tracker state of the conversations.
 
         Arguments:
@@ -127,6 +139,33 @@ class RasaPI:
         if timestamp is not None:
             json_['timestamp'] = timestamp
         kwargs = {'json': json_}
+        if include_events is not None:
+            kwargs['params'] = {'include_events': include_events}
+        return self._post(
+            f'/conversations/{conversation_id}/tracker/events', **kwargs
+        ).json()
+
+    def append_events(
+        self,
+        conversation_id: str,
+        events: Iterable[Event],
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
+        '''Append a new event to the tracker state of the conversations.
+
+        Arguments:
+        conversation_id -- ID of the conversation of which to get the tracker
+        event -- event to append to the tracker
+
+        Keyword Arguments:
+        timestamp -- Time of application (default: None)
+        include_events -- Specify which events of the tracker the response
+            should contain.
+            Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
+            (default: "AFTER_RESTART")
+        '''
+        kwargs = {'json': [e.asdict() for e in events]}
         if include_events is not None:
             kwargs['params'] = {'include_events': include_events}
         return self._post(
