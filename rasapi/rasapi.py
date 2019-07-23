@@ -269,9 +269,14 @@ class RasaPI:
         return self._post(f'/conversations/{conversation_id}/predict').json()
 
     def add_message(
-        self, conversation_id, text, sender,
-        parse_data=None, include_events='AFTER_RESTART'
-    ):
+        self,
+        conversation_id: str,
+        text: str,
+        sender: str,
+        parse_data: Optional['ParseResult'] = None,
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
         '''Adds a message to a tracker. This doesn't trigger the prediction
         loop. It will log the message on the tracker and return, no actions
         will be predicted or run. This is often used together with the predict
@@ -292,11 +297,14 @@ class RasaPI:
             (default: "AFTER_RESTART")
 
         '''
+        kwargs = {'params': {'include_events': include_events}} \
+            if include_events else {}
+        json_ = {'text': text, 'sender': sender}
+        if parse_data is not None:
+            json_['parse_data'] = parse_data
+        kwargs['json'] = json_
         return self._post(
-            f'/conversations/{conversation_id}/messages',
-            params={'include_events': include_events},
-            json={'text': 'hello', 'sender': 'user', 'parse_data': {}}
-        ).json()
+            f'/conversations/{conversation_id}/messages', **kwargs).json()
 
     def train_model(
         self, config,

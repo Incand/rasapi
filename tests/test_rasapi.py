@@ -151,12 +151,11 @@ class TestRasaPI:
 
     def test_add_message(self, rpi):
         req_mock = get_mock_response()
-        rpi.add_message('12345678', 'hello', 'testuser', parse_data={})
+        rpi.add_message('12345678', 'hello', 'testuser')
         req_mock.assert_called_once_with(
             method='POST',
             url='http://nowhere/conversations/12345678/messages',
-            params={'include_events': 'AFTER_RESTART'},
-            json={'text': 'hello', 'sender': 'user', 'parse_data': {}}
+            json={'text': 'hello', 'sender': 'testuser'}
         )
 
     def test_train_model(self, rpi):
