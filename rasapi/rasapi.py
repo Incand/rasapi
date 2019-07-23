@@ -307,8 +307,13 @@ class RasaPI:
             f'/conversations/{conversation_id}/messages', **kwargs).json()
 
     def train_model(
-        self, config,
-        domain=None, nlu=None, stories=None, out=None, force=None
+        self,
+        config: str,
+        domain: str = None,
+        nlu: str = None,
+        stories: str = None,
+        out: str = None,
+        force: bool = None
     ):
         '''Trains a Rasa model. Depending on the data given only a dialogue
         model, only a NLU model, or a model combining a trained dialogue model
@@ -316,20 +321,27 @@ class RasaPI:
         default.
 
         Arguments:
-        config
+        config -- Rasa config in plain text
 
         Keyword arguments:
-        domain
-        nlu
-        stories
-        out
-        force
+        domain -- Rasa domain in plain text
+        nlu -- Rasa NLU training data in markdown format
+        stories -- Rasa Core stories in markdown format
+        out -- Output directory
+        force -- Force a model training even if the data has not changed
         '''
-        return self._post(
-            '/model/train',
-            json={'config': config, 'domain': domain, 'nlu': nlu,
-                  'stories': stories, 'out': out, 'force': force}
-        ).json()
+        json_ = {'config': config}
+        if domain is not None:
+            json_['domain'] = domain
+        if nlu is not None:
+            json_['nlu'] = nlu
+        if stories is not None:
+            json_['stories'] = stories
+        if out is not None:
+            json_['out'] = out
+        if force is not None:
+            json_['force'] = force
+        return self._post('/model/train', json=json_).json()
 
     def evaluate_stories(self, stories, e2e=False):
         '''Evaluates one or multiple stories against the currently loaded Rasa
