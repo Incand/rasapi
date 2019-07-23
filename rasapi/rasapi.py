@@ -70,13 +70,26 @@ class RasaPI:
         '''Get the status of the currently loaded model.'''
         return self._get('/status').json()
 
-    def get_tracker(self, conversation_id):
+    def get_tracker(self, conversation_id, include_events='AFTER_RESTART',
+                    until='None'):
         '''Get the traker of the conversation given by the ID.
 
         Arguments:
         conversation_id -- ID of the conversation of which to get the tracker
+
+        Keyword Arguments:
+        include_events -- Specify which events of the tracker the response
+            should contain.
+            Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
+            (default: "AFTER_RESTART")
+        until -- All events previous to the passed timestamp will be replayed.
+            Events that occur exactly at the target time will be included.
+            (default: "None")
         '''
-        return self._get(f'/conversations/{conversation_id}/tracker').json()
+        return self._get(
+            f'/conversations/{conversation_id}/tracker',
+            params={'include_events': include_events, 'until': until}
+        ).json()
 
     def append_event(self, conversation_id, event):
         '''Append a new event to the tracker state of the conversations.

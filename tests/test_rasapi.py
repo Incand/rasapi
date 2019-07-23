@@ -85,7 +85,8 @@ class TestRasaPI:
         req_mock = get_mock_response()
         rpi.get_tracker('12345678')
         req_mock.assert_called_once_with(
-            method='GET', url='http://nowhere/conversations/12345678/tracker'
+            method='GET', url='http://nowhere/conversations/12345678/tracker',
+            params={'include_events': 'AFTER_RESTART', 'until': 'None'}
         )
 
     def test_append_event(self, rpi):
