@@ -113,12 +113,16 @@ class TestRasaPI:
 
     def test_replace_events(self, rpi):
         req_mock = get_mock_response()
-        rpi.replace_events('12345678', ['slot', 'action', 'whut'])
+        events = [Event('slot'), Event('wurst', 1234), Event('calzone', 4321)]
+        rpi.replace_events('12345678', events)
         req_mock.assert_called_once_with(
             method='PUT',
             url='http://nowhere/conversations/12345678/tracker/events',
-            json=[{'event': 'slot'}, {'event': 'action'}, {'event': 'whut'}],
-            params={'include_events': 'AFTER_RESTART'}
+            json=[
+                {'event': 'slot'},
+                {'event': 'wurst', 'timestamp': 1234},
+                {'event': 'calzone', 'timestamp': 4321}
+            ]
         )
 
     def test_get_story(self, rpi):

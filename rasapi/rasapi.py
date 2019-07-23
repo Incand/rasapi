@@ -145,6 +145,21 @@ class RasaPI:
             f'/conversations/{conversation_id}/tracker/events', **kwargs
         ).json()
 
+    def _handle_events(
+        self,
+        method: Union['self._post', 'self._put'],
+        conversation_id: str,
+        events: Iterable[Event],
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
+        kwargs = {'json': [e.asdict() for e in events]}
+        if include_events is not None:
+            kwargs['params'] = {'include_events': include_events}
+        return method(
+            f'/conversations/{conversation_id}/tracker/events', **kwargs
+        ).json()
+
     def append_events(
         self,
         conversation_id: str,
@@ -165,20 +180,21 @@ class RasaPI:
             Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
             (default: "AFTER_RESTART")
         '''
-        kwargs = {'json': [e.asdict() for e in events]}
-        if include_events is not None:
-            kwargs['params'] = {'include_events': include_events}
-        return self._post(
-            f'/conversations/{conversation_id}/tracker/events', **kwargs
-        ).json()
+        self._handle_events(
+            self._post, conversation_id, events, include_events)
 
-    def replace_events(self, conversation_id, events,
-                       include_events='AFTER_RESTART'):
+    def replace_events(
+        self,
+        conversation_id: str,
+        events: Iterable[Event],
+        include_events:
+            Optional[Union['AFTER_RESTART', 'ALL', 'APPLIED', 'NONE']] = None
+    ) -> Dict:
         '''Replaces all events of a tracker with the provided list of events.
 
         Arguments:
         conversation_id -- ID of the conversation of which to get the tracker
-        events -- Iterable of events which replace the old ones on the tracker
+        events -- Events which replace the old ones on the tracker
 
         Keyword Arguments:
         include_events -- Specify which events of the tracker the response
@@ -186,11 +202,8 @@ class RasaPI:
             Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
             (default: "AFTER_RESTART")
         '''
-        return self._put(
-            f'/conversations/{conversation_id}/tracker/events',
-            json=[{'event': e} for e in events],
-            params={'include_events': include_events}
-        ).json()
+        self._handle_events(
+            self._put, conversation_id, events, include_events)
 
     def get_story(self, conversation_id):
         '''Get an end-to-end story corresponding to a conversation.
