@@ -103,8 +103,13 @@ class RasaPI:
             f'/conversations/{conversation_id}/tracker', **kwargs
         ).json()
 
-    def append_event(self, conversation_id, event, timestamp=None,
-                     include_events='AFTER_RESTART'):
+    def append_event(
+        self,
+        conversation_id: str,
+        event: str,
+        timestamp: Optional[int] = None,
+        include_events: Optional[str] = None
+    ) -> dict:
         '''Append a new event to the tracker state of the conversations.
 
         Arguments:
@@ -121,9 +126,11 @@ class RasaPI:
         json_ = {'event': event}
         if timestamp is not None:
             json_['timestamp'] = timestamp
+        kwargs = {'json': json_}
+        if include_events is not None:
+            kwargs['params'] = {'include_events': include_events}
         return self._post(
-            f'/conversations/{conversation_id}/tracker/events',
-            json=json_, params={'include_events': include_events}
+            f'/conversations/{conversation_id}/tracker/events', **kwargs
         ).json()
 
     def replace_events(self, conversation_id, events,
