@@ -434,8 +434,11 @@ class RasaPI:
         return self._post('/model/parse', **kwargs).json()
 
     def replace_current_model(
-        self, model_file=None, model_server=None, remote_storage=None
-    ):
+        self,
+        model_file: Optional[str] = None,
+        model_server: Optional['EndPointConfig'] = None,
+        remote_storage: Optional[Union['aws', 'gcs', 'azure']] = None
+    ) -> Dict:
         '''Updates the currently loaded model. First, tries to load the model
         from the local storage system. Secondly, tries to load the model from
         the provided model server configuration. Last, tries to load the model
@@ -447,11 +450,14 @@ class RasaPI:
         remote_storage -- Name of the used remote storage.
             Can be one of "aws", "gcs" or "azure"
         '''
-        return self._put('/model', json={
-            'model_file': model_file,
-            'model_server': model_server,
-            'remote_storage': remote_storage
-        }).json()
+        json_ = {}
+        if model_file is not None:
+            json_['model_file'] = model_file
+        if model_server is not None:
+            json_['model_server'] = model_server
+        if remote_storage is not None:
+            json_['remote_storage'] = remote_storage
+        return self._put('/model', json=json_).json()
 
     def unload_current_model(self):
         '''Unloads the currently loaded trained model from the server.'''
