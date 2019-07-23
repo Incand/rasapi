@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
+
 
 setup(
     name='rasapi',
@@ -8,6 +9,6 @@ setup(
     description='Rasa HTTP API bindings',
     author='Armin Schaare',
     author_email='armin-schaare@hotmail.de',
-    packages=['rasapi'],
-    requires=['requests>=2.22.0']
+    packages=find_packages(),
+    install_requires=['requests>=2.22.0']
 )
