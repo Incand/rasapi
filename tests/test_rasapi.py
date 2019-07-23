@@ -104,7 +104,8 @@ class TestRasaPI:
         req_mock.assert_called_once_with(
             method='PUT',
             url='http://nowhere/conversations/12345678/tracker/events',
-            json=[{'event': 'slot'}, {'event': 'action'}, {'event': 'whut'}]
+            json=[{'event': 'slot'}, {'event': 'action'}, {'event': 'whut'}],
+            params={'include_events': 'AFTER_RESTART'}
         )
 
     def test_get_story(self, rpi):

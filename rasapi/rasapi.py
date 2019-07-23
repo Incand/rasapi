@@ -121,10 +121,17 @@ class RasaPI:
         Arguments:
         conversation_id -- ID of the conversation of which to get the tracker
         events -- Iterable of events which replace the old ones on the tracker
+
+        Keyword Arguments:
+        include_events -- Specify which events of the tracker the response
+            should contain.
+            Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
+            (default: "AFTER_RESTART")
         '''
         return self._put(
             f'/conversations/{conversation_id}/tracker/events',
-            json=[{'event': e} for e in events]
+            json=[{'event': e} for e in events],
+            params={'include_events': include_events}
         ).json()
 
     def get_story(self, conversation_id):
