@@ -309,11 +309,11 @@ class RasaPI:
     def train_model(
         self,
         config: str,
-        domain: str = None,
-        nlu: str = None,
-        stories: str = None,
-        out: str = None,
-        force: bool = None
+        domain: Optional[str] = None,
+        nlu: Optional[str] = None,
+        stories: Optional[str] = None,
+        out: Optional[str] = None,
+        force: Optional[bool] = None
     ):
         '''Trains a Rasa model. Depending on the data given only a dialogue
         model, only a NLU model, or a model combining a trained dialogue model
@@ -343,7 +343,11 @@ class RasaPI:
             json_['force'] = force
         return self._post('/model/train', json=json_).json()
 
-    def evaluate_stories(self, stories: str, e2e: bool = None) -> Dict:
+    def evaluate_stories(
+        self,
+        stories: str,
+        e2e: Optional[bool] = None
+    ) -> Dict:
         '''Evaluates one or multiple stories against the currently loaded Rasa
         model.
 
@@ -359,20 +363,25 @@ class RasaPI:
             kwargs['params'] = {'e2e': 'true' if e2e else 'false'}
         return self._post('/model/test/stories', **kwargs).json()
 
-    def evaluate_intents(self, nlu_train_data, model):
+    def evaluate_intents(
+        self,
+        nlu_train_data: str,
+        model: Optional[str] = None
+    ) -> Dict:
         '''Evaluates intents against the currently loaded Rasa model or the
         model specified in the query.
 
         Arguments:
         nlu_train_data -- Rasa NLU training data in markdown format
+
+        Keyword Arguements:
         model -- Model that should be used for evaluation
             (example: "rasa-model.tar.gz")
         '''
-        return self._post(
-            '/model/test/intents',
-            params={'model': model},
-            data=nlu_train_data
-        ).json()
+        kwargs = {'data': nlu_train_data}
+        if model is not None:
+            kwargs['params'] = {'model': model}
+        return self._post('/model/test/intents', **kwargs).json()
 
     def predict_action(self, events, include_events='AFTER_RESTART'):
         '''Predicts the next action on the tracker state as it is posted to
