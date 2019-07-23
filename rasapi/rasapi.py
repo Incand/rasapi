@@ -17,7 +17,7 @@
 
 '''Module containing RASA API bindings.'''
 
-from typing import NamedTuple, Union, Iterable, Optional, Dict
+from typing import NamedTuple, Union, Iterable, Optional, Dict, Text
 
 import requests
 import os
@@ -205,13 +205,24 @@ class RasaPI:
         self._handle_events(
             self._put, conversation_id, events, include_events)
 
-    def get_story(self, conversation_id):
-        '''Get an end-to-end story corresponding to a conversation.
+    def get_story(
+        self,
+        conversation_id: str,
+        until: Optional[int] = None
+    ) -> Text:
+        '''Get an end-to-end story corresponding to a conversation in markdown.
 
         Arguments:
         conversation_id -- ID of the conversation of which to get the tracker
+
+        Keyword Arguments:
+        until -- All events previous to the passed timestamp will be replayed.
+            Events that occur exactly at the target time will be included.
+            (default: "None")
         '''
-        return self._get(f'/conversations/{conversation_id}/story').text
+        kwargs = {'params': {'until': until}} if until is not None else {}
+        return self._get(
+            f'/conversations/{conversation_id}/story', **kwargs).text
 
     def execute_action(
         self, conversation_id, name,
