@@ -343,7 +343,7 @@ class RasaPI:
             json_['force'] = force
         return self._post('/model/train', json=json_).json()
 
-    def evaluate_stories(self, stories, e2e=False):
+    def evaluate_stories(self, stories: str, e2e: bool = None) -> Dict:
         '''Evaluates one or multiple stories against the currently loaded Rasa
         model.
 
@@ -354,9 +354,10 @@ class RasaPI:
         e2e -- Perform an end-to-end evaluation on the posted stories
             (default: False)
         '''
-        e2e_str = 'true' if e2e else 'false'
-        return self._post(
-            '/model/test/stories', params={'e2e': e2e_str}, data=stories)
+        kwargs = {'data': stories}
+        if e2e is not None:
+            kwargs['params'] = {'e2e': 'true' if e2e else 'false'}
+        return self._post('/model/test/stories', **kwargs).json()
 
     def evaluate_intents(self, nlu_train_data, model):
         '''Evaluates intents against the currently loaded Rasa model or the

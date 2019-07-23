@@ -175,7 +175,6 @@ class TestRasaPI:
         req_mock.assert_called_once_with(
             method='POST',
             url='http://nowhere/model/test/stories',
-            params={'e2e': 'false'},
             data="MARKDOWN"
         )
 
