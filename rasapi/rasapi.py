@@ -24,10 +24,18 @@ import os
 
 
 class Event(NamedTuple):
+    '''Represents Rasa events which can be added/modified on a conversation
+    tracker.
+
+    Fields:
+    event -- Name of the event
+    timestamp -- When this event occured
+    '''
     event: str
     timestamp: Optional[int] = None
 
     def asdict(self) -> Dict:
+        '''Return the event as an API compatible dictionary.'''
         ret = {'event': self.event}
         if self.timestamp is not None:
             ret['timestamp'] = self.timestamp
