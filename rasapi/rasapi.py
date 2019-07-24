@@ -21,6 +21,10 @@ from typing import NamedTuple, Union, Iterable, Optional, Dict, Text
 
 import requests
 import os
+from functools import wraps
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Event(NamedTuple):
@@ -39,16 +43,43 @@ class Event(NamedTuple):
         ret = {'event': self.event}
         if self.timestamp is not None:
             ret['timestamp'] = self.timestamp
+        logger.debug(f'Event as dictionary: {ret}')
         return ret
+
+
+def log_args_ret(level=logging.INFO):
+    def deco(f):
+        @wraps(f)
+        def _wrapper(self, *args, **kwargs):
+            global logger
+            args_str_list = [repr(arg) for arg in args]
+            kwargs_str_list = [f'{k}={repr(v)}' for k, v in kwargs.items()]
+            param_string = ', '.join(args_str_list + kwargs_str_list)
+            logger.log(level, f'{f.__qualname__}({param_string})')
+            tmp_logger_name = logger.name
+            logger = logger.getChild(f'{f.__qualname__}')
+            ret = f(self, *args, **kwargs)
+            logger = logging.getLogger(tmp_logger_name)
+            logger.log(level, f' -> {ret}')
+            return ret
+        return _wrapper
+    return deco
 
 
 class RasaPI:
     '''Class for Rasa API communication.'''
     def __init__(self, url: str, token: Optional[str] = None) -> None:
+        logger.info('Setting up RasaPI object...')
         self.url = url.strip('/')
-        self.token = token \
-            if token is not None \
-            else os.environ.get('RASA_TOKEN', None)
+        logger.debug(f'Using URL: {self.url}')
+        if token is None:
+            logger.debug('Token Argument is None. '
+                         'Checking envvars for "RASA_TOKEN"...')
+            token = os.environ.get('RASA_TOKEN', None)
+            if token is None:
+                logger.debug('"RASA_TOKEN" not found in envvars.')
+        self.token = token
+        logger.debug(f'Using token: {self.token}')
 
     def _request(self, method: str, path: str, **kwargs) -> requests.request:
         url = self.url + path
@@ -57,7 +88,10 @@ class RasaPI:
         if token:
             kwargs.setdefault('params', {'token': token})
         req_args.update(kwargs)
-        return requests.request(**req_args)
+        logger.debug(f'Request Args: {req_args}')
+        resp = requests.request(**req_args)
+        logger.debug(f'Response: {resp.text}')
+        return resp
 
     def _get(self, path: str, **kwargs) -> requests.request:
         return self._request('GET', path, **kwargs)
@@ -72,25 +106,30 @@ class RasaPI:
         return self._request('DELETE', path, **kwargs)
 
     @property
+    @log_args_ret()
     def is_healthy(self) -> bool:
         '''Returns True if server is up and reachable, False otherwise.'''
         return self._get('/').ok
 
     @property
+    @log_args_ret()
     def version(self) -> str:
         '''Get the version of the running Rasa server.'''
         return self._get('/version').json()['version']
 
     @property
+    @log_args_ret()
     def minimum_compatible_version(self) -> str:
         '''Get the minimum compatible version of the running Rasa server.'''
         return self._get('/version').json()['minimum_compatible_version']
 
     @property
+    @log_args_ret()
     def status(self) -> Dict:
         '''Get the status of the currently loaded model.'''
         return self._get('/status').json()
 
+    @log_args_ret()
     def get_tracker(
         self,
         conversation_id: str,
@@ -122,6 +161,7 @@ class RasaPI:
             f'/conversations/{conversation_id}/tracker', **kwargs
         ).json()
 
+    @log_args_ret()
     def append_event(
         self,
         conversation_id: str,
@@ -153,6 +193,7 @@ class RasaPI:
             f'/conversations/{conversation_id}/tracker/events', **kwargs
         ).json()
 
+    @log_args_ret(logging.DEBUG)
     def _handle_events(
         self,
         method: Union['self._post', 'self._put'],
@@ -168,6 +209,7 @@ class RasaPI:
             f'/conversations/{conversation_id}/tracker/events', **kwargs
         ).json()
 
+    @log_args_ret()
     def append_events(
         self,
         conversation_id: str,
@@ -188,9 +230,10 @@ class RasaPI:
             Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
             (default: "AFTER_RESTART")
         '''
-        self._handle_events(
+        return self._handle_events(
             self._post, conversation_id, events, include_events)
 
+    @log_args_ret()
     def replace_events(
         self,
         conversation_id: str,
@@ -210,9 +253,10 @@ class RasaPI:
             Can be one of "AFTER_RESTART", "ALL", "APPLIED", "NONE"
             (default: "AFTER_RESTART")
         '''
-        self._handle_events(
+        return self._handle_events(
             self._put, conversation_id, events, include_events)
 
+    @log_args_ret()
     def get_story(
         self,
         conversation_id: str,
@@ -232,6 +276,7 @@ class RasaPI:
         return self._get(
             f'/conversations/{conversation_id}/story', **kwargs).text
 
+    @log_args_ret()
     def execute_action(
         self,
         conversation_id: str,
@@ -267,6 +312,7 @@ class RasaPI:
             f'/conversations/{conversation_id}/execute', **kwargs
         ).json()
 
+    @log_args_ret()
     def score_actions(self, conversation_id: str) -> Dict:
         '''Runs the conversations tracker through the model's policies to
         predict the scores of all actions present in the model's domain.
@@ -276,6 +322,7 @@ class RasaPI:
         '''
         return self._post(f'/conversations/{conversation_id}/predict').json()
 
+    @log_args_ret()
     def add_message(
         self,
         conversation_id: str,
@@ -314,6 +361,7 @@ class RasaPI:
         return self._post(
             f'/conversations/{conversation_id}/messages', **kwargs).json()
 
+    @log_args_ret()
     def train_model(
         self,
         config: str,
@@ -351,6 +399,7 @@ class RasaPI:
             json_['force'] = force
         return self._post('/model/train', json=json_).json()
 
+    @log_args_ret()
     def evaluate_stories(
         self,
         stories: str,
@@ -371,6 +420,7 @@ class RasaPI:
             kwargs['params'] = {'e2e': 'true' if e2e else 'false'}
         return self._post('/model/test/stories', **kwargs).json()
 
+    @log_args_ret()
     def evaluate_intents(
         self,
         nlu_train_data: str,
@@ -391,6 +441,7 @@ class RasaPI:
             kwargs['params'] = {'model': model}
         return self._post('/model/test/intents', **kwargs).json()
 
+    @log_args_ret()
     def predict_action(
         self,
         events: Iterable[Event],
@@ -416,6 +467,7 @@ class RasaPI:
         kwargs['json'] = [e.asdict() for e in events]
         return self._post('/model/predict', **kwargs).json()
 
+    @log_args_ret()
     def parse_message(
         self,
         text: str,
@@ -441,6 +493,7 @@ class RasaPI:
         kwargs['json'] = json_
         return self._post('/model/parse', **kwargs).json()
 
+    @log_args_ret()
     def replace_current_model(
         self,
         model_file: Optional[str] = None,
@@ -467,10 +520,12 @@ class RasaPI:
             json_['remote_storage'] = remote_storage
         return self._put('/model', json=json_).json()
 
+    @log_args_ret()
     def unload_current_model(self) -> Dict:
         '''Unloads the currently loaded trained model from the server.'''
         return self._delete('/model').json()
 
+    @log_args_ret()
     def domain(self,
                type_: Union['yaml', 'json'] = 'yaml') -> Union[str, Dict]:
         '''Returns the domain specification the currently loaded model is using.
@@ -488,54 +543,35 @@ class RasaPI:
 
 def int_test():
     import sys
-    from pprint import pprint
-    url = sys.argv[1]
-    rpi = RasaPI(url)
-
-    # print('version:')
-    # pprint(rpi.version)
-    # print('minimum_compatible_version:')
-    # pprint(rpi.minimum_compatible_version)
-    # print('status:')
-    # pprint(rpi.status)
-    # print('get_tracker(test):')
-    # pprint(rpi.get_tracker('test'))
-    # print('append_event("test", "slot"):')
-    # pprint(rpi.append_event('test', 'slot'))
-    # print('replace_events("test", ["slot", "action"]):')
-    # pprint(rpi.replace_events('test', ['slot', 'action']))
-    # print('get_story("test"):')
-    # pprint(rpi.get_story('test'))
-    # print('execute_action("test", "utter_greet"):')
-    # pprint(rpi.execute_action('test', 'utter_greet'))
-    # print('score_actions("test"):')
-    # pprint(rpi.score_actions('test'))
-    print('add_message("test", "hello", "testuser", {}):')
-    pprint(rpi.add_message('test', 'hello', 'testuser', {}))
-    print('train_model(...):')
-    pprint(rpi.train_model(
-        **{'config': 'wurst', 'domain': 'a', 'nlu': 'b', 'stories': 'c',
-           'out': 'd', 'force': False}
-    ))
-    print('evaluate_intents(...):')
-    pprint(rpi.evaluate_intents('MARKDOWN', 'model.tar.gz'))
-    print('predict_action(...):')
-    pprint(rpi.predict_action(['slot', 'action', 'whut']))
-    print('parse_message(...):')
-    pprint(rpi.parse_message('message'))
-    print('replace_current_model(...):')
-    pprint(rpi.replace_current_model('/model.tar.gz'))
-    print('unload_current_model():')
-    pprint(rpi.unload_current_model())
-    print('domain:')
-    pprint(rpi.domain())
-
-
-if __name__ == '__main__':
-    import sys
-    from pprint import pprint
     url = sys.argv[1]
     token = sys.argv[2]
     rpi = RasaPI(url, token)
 
-    pprint(rpi.domain('json'))
+    rpi.version
+    rpi.minimum_compatible_version
+    rpi.status
+    rpi.get_tracker('test')
+    rpi.append_event('test', 'slot')
+    rpi.append_events('test', [Event('slot'), Event('slot', 1234)])
+    rpi.replace_events('test', [Event('slot'), Event('slot', 1234)])
+    rpi.get_story('test')
+    rpi.execute_action('test', 'utter_greet')
+    rpi.score_actions('test')
+    rpi.add_message('test', 'hello', 'testuser', {})
+    rpi.train_model(
+        **{'config': 'wurst', 'domain': 'a', 'nlu': 'b', 'stories': 'c',
+           'out': 'd', 'force': False}
+    )
+    rpi.evaluate_stories('MARKDOWN')
+    rpi.evaluate_intents('MARKDOWN', 'model.tar.gz')
+    rpi.predict_action([Event('slot'), Event('slot', 1234)])
+    rpi.parse_message('message')
+    rpi.replace_current_model('/model.tar.gz')
+    rpi.unload_current_model()
+    rpi.domain()
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    int_test()
